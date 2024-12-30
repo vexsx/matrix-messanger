@@ -1,0 +1,81 @@
+services:
+  # Synapse (Matrix server)
+  synapse:
+    image: docker.arvancloud.ir/matrixdotorg/synapse:v1.121.1
+    container_name: synapse
+    restart: always
+    volumes:
+      - ./data/synapse:/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - SYNAPSE_SERVER_NAME=matrix.xaas.ir
+      - SYNAPSE_REPORT_STATS=yes
+    ports:
+      - "8008:8008"
+      - "8448:8448"
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - synapse_network
+
+  # Postgres database
+  postgres:
+    image: docker.arvancloud.ir/postgres:14
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: /run/secrets/postgres_password
+      POSTGRES_DB: synapse
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+    secrets:
+      - postgres_password
+    networks:
+      - synapse_network
+
+  # Element Web (Matrix web client)
+  element-web:
+    image: docker.arvancloud.ir/vectorim/element-web:v1.11.89
+    container_name: element-web
+    restart: always
+    volumes:
+      - ./data/element:/app/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "80:80"
+    networks:
+      - synapse_network
+
+  # Nginx (Reverse Proxy)
+  nginx:
+    image: docker.arvancloud.ir/nginx:1.27.3
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx/etc/nginx:/etc/nginx
+      - ./nginx/etc/ssl:/etc/nginx/ssl:ro
+      - ./nginx/var/log/nginx:/var/log/nginx
+      - ./nginx/var/nginx/cache:/var/nginx/cache
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "443:443"
+    depends_on:
+      - synapse
+      - element-web
+    networks:
+      - synapse_network
+
+networks:
+  synapse_network:
+    driver: bridge
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password
