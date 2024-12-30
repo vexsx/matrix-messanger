@@ -250,3 +250,4 @@ rc_messages:
 # vim:ft=yaml
 
 report_stats: True
+suppress_key_server_warning: True
