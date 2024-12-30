@@ -4,7 +4,8 @@
 # General Configuration
 # -----------------------------------------------------------------------------
 server_name: "matrix-srv.xaas.ir"  # Your server's fully qualified domain name (FQDN)
-public_baseurl: "https://matrix.xaas.ir/"  # The base URL for your server, used in emails and redirects
+public_baseurl: "https://matrix-srv.xaas.ir/"  # The base URL for your server, used in emails and redirects
+
 
 pid_file: /data/homeserver.pid      # Path to store the PID file for the Synapse process
 
@@ -122,8 +123,8 @@ cors_origins:
 # -----------------------------------------------------------------------------
 # Application Services Configuration
 # -----------------------------------------------------------------------------
-app_service_config_files:
-  - "/data/appservices.yaml"                      # Path to application services configuration file
+# app_service_config_files:
+#   - "/data/appservices.yaml"                      # Path to application services configuration file
 
 # -----------------------------------------------------------------------------
 # Federation Settings
@@ -326,7 +327,7 @@ use_insecure_ssl_client_just_for_testing_do_not_use: true  # Allow insecure SSL 
 enable_media_repo: true                             # Enable the media repository feature
 
 # Well-Known Configuration
-serve_server_wellknown: false                       # Do not serve .well-known/matrix/client and .well-known/matrix/server
+serve_server_wellknown: true                       # Do not serve .well-known/matrix/client and .well-known/matrix/server
 
 # Presence Configuration
 presence:
@@ -380,5 +381,3 @@ url_preview_ip_range_blacklist:                  # Blacklist IP ranges for URL p
   - "::1/128"                                    # IPv6 loopback
   - "fc00::/7"                                    # IPv6 unique local addresses
   - "fe80::/10"                                   # IPv6 link-local addresses
-  - "localhost"                                   # Hostname resolution for localhost
-  - "matrix-srv.xaas.ir"                          # Your own server to prevent self-fetching
