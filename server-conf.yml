@@ -142,14 +142,14 @@ cache:
 # -----------------------------------------------------------------------------
 # Email Configuration
 # -----------------------------------------------------------------------------
-email:
-  smtp_host: "smtp.your-email-provider.com"        # SMTP server host
-  smtp_port: 587                                   # SMTP server port
-  smtp_user: "noreply@matrix-srv.xaas.ir"          # SMTP username
-  smtp_pass: "YourSMTPPassword"                    # SMTP password
-  require_transport_security: true                 # Require TLS for SMTP
-  from: "Matrix Server <noreply@matrix-srv.xaas.ir>"  # Email sender address
-  templates_dir: "/data/email-templates"           # Directory for email templates
+# email:
+#   smtp_host: "smtp.your-email-provider.com"        # SMTP server host
+#   smtp_port: 587                                   # SMTP server port
+#   smtp_user: "noreply@matrix-srv.xaas.ir"          # SMTP username
+#   smtp_pass: "YourSMTPPassword"                    # SMTP password
+#   require_transport_security: true                 # Require TLS for SMTP
+#   from: "Matrix Server <noreply@matrix-srv.xaas.ir>"  # Email sender address
+#   templates_dir: "/data/email-templates"           # Directory for email templates
 
 # -----------------------------------------------------------------------------
 # Branding and UI Settings
