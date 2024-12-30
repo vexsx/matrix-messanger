@@ -11,26 +11,26 @@ pid_file: /data/homeserver.pid      # Path to store the PID file
 # Listeners Configuration
 # -----------------------------------------------------------------------------
 listeners:
-  - port: 8448                      # Port for federation (HTTPS)
-    tls: true                       # Enable TLS for secure communication
-    type: http
-    x_forwarded: true               # Trust X-Forwarded-For headers (if behind a proxy)
-    bind_addresses:
-      - "0.0.0.0"                   # Listen on all network interfaces
-    resources:
-      - names: [client, federation]
-        compress: true              # Enable compression for efficiency
-        verify_client_cert: false   # Set to true if requiring client certificates
-        tls_certificate_path: "/data/certs/fullchain.pem"  # Path to TLS certificate
-        tls_private_key_path: "/data/certs/privkey.pem"    # Path to TLS private key
+  # - port: 8448                      # Port for federation (HTTPS)
+  #   tls: true                       # Enable TLS for secure communication
+  #   type: http
+  #   x_forwarded: true               # Trust X-Forwarded-For headers (if behind a proxy)
+  #   bind_addresses:
+  #     - "0.0.0.0"                   # Listen on all network interfaces
+  #   resources:
+  #     - names: [client, federation]
+  #       compress: true              # Enable compression for efficiency
+        # verify_client_cert: false   # Set to true if requiring client certificates
+        #tls_certificate_path: "/data/certs/fullchain.pem"  # Path to TLS certificate
+        #tls_private_key_path: "/data/certs/privkey.pem"    # Path to TLS private key
 
   - port: 8008                      # Port for client-server API (HTTP)
     tls: false                      # Disable TLS (recommend proxying with TLS)
     type: http
     bind_addresses:
-      - "127.0.0.1"                 # Bind to localhost for security
+      - "0.0.0.0"                 # Bind to localhost for security
     resources:
-      - names: [client]
+      - names: [client,federation]
         compress: false
 
 # -----------------------------------------------------------------------------
@@ -39,9 +39,9 @@ listeners:
 database:
   name: psycopg2                     # Use PostgreSQL for better performance
   args:
-    user: synapse_user               # PostgreSQL username
-    password: "StrongP@ssw0rd!"      # PostgreSQL password (use a strong password)
-    host: localhost                   # Database host
+    user: synapse            # PostgreSQL username
+    password: "alBzf)GS38!.2DhaXM{=6@G<"      # PostgreSQL password (use a strong password)
+    host: postgres                  # Database host
     database: synapse                # Database name
     cp_min: 5                         # Minimum number of connections
     cp_max: 10                        # Maximum number of connections
@@ -78,7 +78,9 @@ trusted_key_servers:
 # -----------------------------------------------------------------------------
 enable_registration: true                        # Allow user registrations
 enable_registration_without_verification: true   # Allow registrations without email/SMS verification
-
+password_requirements:
+  minimum_length: 8                               # Minimum password length
+  require_special: true                           # Require special characters in passwords
 # -----------------------------------------------------------------------------
 # Auto-Join Rooms Configuration
 # -----------------------------------------------------------------------------
@@ -123,6 +125,42 @@ federation_domain_whitelist:
 #   - "synapse.app.federation_server"
 
 # -----------------------------------------------------------------------------
+# Caching Configuration
+# -----------------------------------------------------------------------------
+cache:
+  background_tasks:
+    cache_size: 1000000                           # Number of items in background task cache
+  room_list_cache:
+    cache_size: 100000                             # Number of items in room list cache
+  state:
+    cache_size: 1000000                            # Number of items in state cache
+  event_cache:
+    cache_size: 1000000                            # Number of items in event cache
+  room_key_cache:
+    cache_size: 1000000                            # Number of items in room key cache
+
+# -----------------------------------------------------------------------------
+# Email Configuration
+# -----------------------------------------------------------------------------
+email:
+  smtp_host: "smtp.your-email-provider.com"        # SMTP server host
+  smtp_port: 587                                   # SMTP server port
+  smtp_user: "noreply@matrix-srv.xaas.ir"          # SMTP username
+  smtp_pass: "YourSMTPPassword"                    # SMTP password
+  require_transport_security: true                 # Require TLS for SMTP
+  from: "Matrix Server <noreply@matrix-srv.xaas.ir>"  # Email sender address
+  templates_dir: "/data/email-templates"           # Directory for email templates
+
+# -----------------------------------------------------------------------------
+# Branding and UI Settings
+# -----------------------------------------------------------------------------
+branding:
+  app_name: "XaaS Matrix Server"                  # Name of your Matrix server
+  background_image_url: "https://matrix-srv.xaas.ir/background.jpg"  # URL for background image
+  logo_url: "https://matrix-srv.xaas.ir/logo.png"  # URL for logo image
+  custom_css: "/data/custom.css"                   # Path to custom CSS file
+
+# -----------------------------------------------------------------------------
 # Additional Security Settings
 # -----------------------------------------------------------------------------
 # Enable Content Security Policy (CSP) headers
@@ -140,11 +178,33 @@ content_security_policy:
 # Metrics and Monitoring
 # -----------------------------------------------------------------------------
 # Enable Prometheus metrics (requires additional setup)
-# metrics:
-#   enabled: true
-#   bind_address: "0.0.0.0"
-#   port: 9000
-
+metrics:
+  enabled: true
+  bind_address: "0.0.0.0"
+  port: 9000
+# -----------------------------------------------------------------------------
+# Content Security Policy (CSP)
+# -----------------------------------------------------------------------------
+content_security_policy:
+  default_src:
+    - "'self'"
+  script_src:
+    - "'self'"
+    - "'unsafe-inline'"
+  style_src:
+    - "'self'"
+    - "'unsafe-inline'"
+  img_src:
+    - "'self'"
+    - "data:"
+    - "https://matrix-srv.xaas.ir"
+  connect_src:
+    - "'self'"
+    - "wss://matrix-srv.xaas.ir"
+  font_src:
+    - "'self'"
+  object_src:
+    - "'none'"
 # -----------------------------------------------------------------------------
 # Encryption and Key Backup (Optional)
 # -----------------------------------------------------------------------------
@@ -158,6 +218,16 @@ content_security_policy:
 # event_purger:
 #   enabled: true
 #   room_retention_days: 365                     # Retain room events for 1 year
+
+# -----------------------------------------------------------------------------
+# Rate Limiting Configuration (Advanced)
+# -----------------------------------------------------------------------------
+rc_registration:
+  per_second: 5                                     # Registration attempts per second
+  burst_count: 10                                   # Burst attempts allowed
+rc_messages:
+  max_messages_per_second: 100                      # Maximum messages per second per user
+
 
 # -----------------------------------------------------------------------------
 # File Permissions and Security
