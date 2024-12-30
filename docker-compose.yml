@@ -13,6 +13,7 @@ services:
     ports:
       - "8008:8008"
       - "8448:8448"
+      - "9001:9000" #[prometheus]
     depends_on:
       - postgres
     healthcheck:
