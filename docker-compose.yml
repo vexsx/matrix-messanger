@@ -14,6 +14,7 @@ services:
       - "8008:8008"
       - "8448:8448"
       - "9001:9000" #[prometheus]
+    #command: ["generate"]
     depends_on:
       - postgres
     healthcheck:
