@@ -3,48 +3,53 @@
 # -----------------------------------------------------------------------------
 # General Configuration
 # -----------------------------------------------------------------------------
-server_name: "matrix-srv.xaas.ir"  # Your server's domain name
+server_name: "matrix-srv.xaas.ir"  # Your server's fully qualified domain name (FQDN)
+public_baseurl: "https://matrix.xaas.ir/"  # The base URL for your server, used in emails and redirects
 
-pid_file: /data/homeserver.pid      # Path to store the PID file
+pid_file: /data/homeserver.pid      # Path to store the PID file for the Synapse process
 
 # -----------------------------------------------------------------------------
 # Listeners Configuration
 # -----------------------------------------------------------------------------
 listeners:
+  # Federation Listener (Disabled)
+  # Uncomment the following block to enable federation over HTTPS
   # - port: 8448                      # Port for federation (HTTPS)
   #   tls: true                       # Enable TLS for secure communication
   #   type: http
-  #   x_forwarded: true               # Trust X-Forwarded-For headers (if behind a proxy)
+  #   x_forwarded: true               # Trust X-Forwarded-For headers if behind a proxy
   #   bind_addresses:
   #     - "0.0.0.0"                   # Listen on all network interfaces
   #   resources:
   #     - names: [client, federation]
   #       compress: true              # Enable compression for efficiency
-        # verify_client_cert: false   # Set to true if requiring client certificates
-        #tls_certificate_path: "/data/certs/fullchain.pem"  # Path to TLS certificate
-        #tls_private_key_path: "/data/certs/privkey.pem"    # Path to TLS private key
+  #       verify_client_cert: false   # Set to true if requiring client certificates
+  #       tls_certificate_path: "/data/certs/fullchain.pem"  # Path to TLS certificate
+  #       tls_private_key_path: "/data/certs/privkey.pem"    # Path to TLS private key
 
+  # Client-Server API Listener
   - port: 8008                      # Port for client-server API (HTTP)
-    tls: false                      # Disable TLS (recommend proxying with TLS)
+    tls: false                      # Disable TLS (recommended to proxy with TLS)
     type: http
+    x_forwarded: true               # Trust X-Forwarded-For headers if behind a proxy
     bind_addresses:
-      - "0.0.0.0"                 # Bind to localhost for security
+      - "0.0.0.0"                   # Listen on all network interfaces
     resources:
-      - names: [client,federation]
-        compress: false
+      - names: [client, federation] # Services to expose on this listener
+        compress: false              # Disable compression
 
 # -----------------------------------------------------------------------------
 # Database Configuration
 # -----------------------------------------------------------------------------
 database:
-  name: psycopg2                     # Use PostgreSQL for better performance
+  name: psycopg2                     # Database engine: psycopg2 for PostgreSQL
   args:
-    user: synapse            # PostgreSQL username
-    password: "alBzf)GS38!.2DhaXM{=6@G<"      # PostgreSQL password (use a strong password)
-    host: postgres                  # Database host
-    database: synapse                # Database name
-    cp_min: 5                         # Minimum number of connections
-    cp_max: 10                        # Maximum number of connections
+    user: synapse                    # PostgreSQL username
+    password: "alBzf)GS38!.2DhaXM{=6@G<"  # PostgreSQL password (ensure this is strong and secure)
+    host: postgres                   # Database host (use service name if using Docker)
+    database: synapse                # PostgreSQL database name
+    cp_min: 5                        # Minimum number of database connections
+    cp_max: 10                       # Maximum number of database connections
 
 # -----------------------------------------------------------------------------
 # Logging Configuration
@@ -54,18 +59,16 @@ log_config: "/data/matrix-srv.xaas.ir.log.config"  # Path to log configuration f
 # -----------------------------------------------------------------------------
 # Media Store Configuration
 # -----------------------------------------------------------------------------
-media_store_path: /data/media_store    # Directory to store media files
+media_store_path: /data/media_store    # Directory to store media files (images, videos, etc.)
 
 # -----------------------------------------------------------------------------
 # Secrets and Keys Configuration
 # -----------------------------------------------------------------------------
-registration_shared_secret: "XMiHr*TH@A1J9TdGG0x.0xhGq^K4f2i@StCNaqq~&.4JF&4b&c"  # Shared secret for registration
+registration_shared_secret: "XMiHr*TH@A1J9TdGG0x.0xhGq^K4f2i@StCNaqq~&.4JF&4b&c"  # Shared secret for user registration API
 
-macaroon_secret_key: "6@D*N=EstJEjZezoaE~S~rvZ#cN-QdUch3Otaus0AzNkrL,W~c"         # Secret key for macaroons
-
-form_secret: "TSfEve1._8g.V:_eh&=F;7a-QgWgWwmWKJLdgKPalJmzhObONU"                  # Secret key for forms
-
-signing_key_path: "/data/matrix-srv.xaas.ir.signing.key"                        # Path to signing key
+macaroon_secret_key: "6@D*N=EstJEjZezoaE~S~rvZ#cN-QdUch3Otaus0AzNkrL,W~c"         # Secret key for macaroons (used for authentication)
+form_secret: "TSfEve1._8g.V:_eh&=F;7a-QgWgWwmWKJLdgKPalJmzhObONU"                  # Secret key for forms (e.g., login forms)
+signing_key_path: "/data/matrix-srv.xaas.ir.signing.key"                        # Path to the signing key file
 
 # -----------------------------------------------------------------------------
 # Trusted Key Servers for Federation
@@ -76,16 +79,17 @@ trusted_key_servers:
 # -----------------------------------------------------------------------------
 # Registration Settings
 # -----------------------------------------------------------------------------
-enable_registration: true                        # Allow user registrations
+enable_registration: true                        # Allow users to register accounts
 enable_registration_without_verification: true   # Allow registrations without email/SMS verification
 password_requirements:
   minimum_length: 8                               # Minimum password length
   require_special: true                           # Require special characters in passwords
+
 # -----------------------------------------------------------------------------
 # Auto-Join Rooms Configuration
 # -----------------------------------------------------------------------------
 auto_join_rooms:
-  - "#public:matrix-srv.xaas.ir"                # Rooms that new users automatically join
+  - "#public:matrix-srv.xaas.ir"                # Rooms that new users automatically join upon registration
 
 # -----------------------------------------------------------------------------
 # Rate Limiting Configuration
@@ -96,6 +100,17 @@ rc_messages:
 rc_registration:
   per_second: 5                                   # Registration attempts per second
   burst_count: 10                                 # Burst attempts allowed
+
+rc_login:
+  address:
+    per_second: 0.15                              # Login attempts per second per IP address
+    burst_count: 5                                # Burst login attempts allowed
+  account:
+    per_second: 0.18                              # Account-related actions per second
+    burst_count: 4                                # Burst account actions allowed
+  failed_attempts:
+    per_second: 0.19                              # Failed login attempts per second
+    burst_count: 7                                # Burst failed attempts allowed
 
 # -----------------------------------------------------------------------------
 # CORS Configuration
@@ -108,7 +123,7 @@ cors_origins:
 # Application Services Configuration
 # -----------------------------------------------------------------------------
 app_service_config_files:
-  - "/data/appservices.yaml"                      # Path to application services configuration
+  - "/data/appservices.yaml"                      # Path to application services configuration file
 
 # -----------------------------------------------------------------------------
 # Federation Settings
@@ -116,38 +131,44 @@ app_service_config_files:
 federation_domain_whitelist:
   - "matrix.org"                                   # Domains allowed for federation
 
+allow_public_rooms_without_auth: true              # Allow public rooms to be created without authentication
+allow_public_rooms_over_federation: true          # Allow public rooms to be federated
+
 # -----------------------------------------------------------------------------
 # Worker Configuration (Optional for Scaling)
 # -----------------------------------------------------------------------------
-# Uncomment and configure the following if using workers
+# Uncomment and configure the following if using worker processes to scale Synapse
 # worker_app:
-#   - "synapse.app.federation_sender"
-#   - "synapse.app.federation_server"
+#   - "synapse.app.federation_sender"             # Handles sending federation data
+#   - "synapse.app.federation_server"             # Handles receiving federation data
+#   - "synapse.app.query_background_updates"      # Handles background queries
+#   - "synapse.app.stream_worker"                  # Handles streaming events
 
 # -----------------------------------------------------------------------------
 # Caching Configuration
 # -----------------------------------------------------------------------------
 cache:
   background_tasks:
-    cache_size: 1000000                           # Number of items in background task cache
+    cache_size: 0                       # Number of items in background task cache
   room_list_cache:
-    cache_size: 100000                             # Number of items in room list cache
+    cache_size: 0                       # Number of items in room list cache
   state:
-    cache_size: 1000000                            # Number of items in state cache
+    cache_size: 0                       # Number of items in state cache
   event_cache:
-    cache_size: 1000000                            # Number of items in event cache
+    cache_size: 0                       # Number of items in event cache
   room_key_cache:
-    cache_size: 1000000                            # Number of items in room key cache
+    cache_size: 0                       # Number of items in room key cache
 
 # -----------------------------------------------------------------------------
 # Email Configuration
 # -----------------------------------------------------------------------------
+# Configure email settings for user verification, password resets, etc.
 # email:
 #   smtp_host: "smtp.your-email-provider.com"        # SMTP server host
-#   smtp_port: 587                                   # SMTP server port
+#   smtp_port: 587                                   # SMTP server port (usually 587 for TLS)
 #   smtp_user: "noreply@matrix-srv.xaas.ir"          # SMTP username
 #   smtp_pass: "YourSMTPPassword"                    # SMTP password
-#   require_transport_security: true                 # Require TLS for SMTP
+#   require_transport_security: true                 # Require TLS for SMTP connections
 #   from: "Matrix Server <noreply@matrix-srv.xaas.ir>"  # Email sender address
 #   templates_dir: "/data/email-templates"           # Directory for email templates
 
@@ -158,66 +179,52 @@ branding:
   app_name: "XaaS Matrix Server"                  # Name of your Matrix server
   background_image_url: "https://matrix-srv.xaas.ir/background.jpg"  # URL for background image
   logo_url: "https://matrix-srv.xaas.ir/logo.png"  # URL for logo image
-  custom_css: "/data/custom.css"                   # Path to custom CSS file
+  custom_css: "/data/custom.css"                   # Path to custom CSS file for additional styling
 
 # -----------------------------------------------------------------------------
 # Additional Security Settings
 # -----------------------------------------------------------------------------
-# Enable Content Security Policy (CSP) headers
+# Configure Content Security Policy (CSP) headers to mitigate XSS and other attacks
 content_security_policy:
   default_src:
-    - "'self'"
+    - "*"                                         # Allow all sources (use more restrictive policies in production)
   script_src:
-    - "'self'"
-    - "'unsafe-inline'"
+    - "*"                                         # Allow all scripts
   style_src:
-    - "'self'"
-    - "'unsafe-inline'"
+    - "*"                                         # Allow all styles
+  img_src:
+    - "*"                                         # Allow all images
+  connect_src:
+    - "*"                                         # Allow all connections
+  font_src:
+    - "*"                                         # Allow all fonts
+  object_src:
+    - "*"                                         # Allow all objects
 
 # -----------------------------------------------------------------------------
 # Metrics and Monitoring
 # -----------------------------------------------------------------------------
-# Enable Prometheus metrics (requires additional setup)
 metrics:
-  enabled: true
-  bind_address: "0.0.0.0"
-  port: 9000
-# -----------------------------------------------------------------------------
-# Content Security Policy (CSP)
-# -----------------------------------------------------------------------------
-content_security_policy:
-  default_src:
-    - "'self'"
-  script_src:
-    - "'self'"
-    - "'unsafe-inline'"
-  style_src:
-    - "'self'"
-    - "'unsafe-inline'"
-  img_src:
-    - "'self'"
-    - "data:"
-    - "https://matrix-srv.xaas.ir"
-  connect_src:
-    - "'self'"
-    - "wss://matrix-srv.xaas.ir"
-  font_src:
-    - "'self'"
-  object_src:
-    - "'none'"
+  enabled: true                                     # Enable Prometheus metrics
+  bind_address: "0.0.0.0"                           # Address to bind metrics server
+  port: 9000                                        # Port for metrics
+
 # -----------------------------------------------------------------------------
 # Encryption and Key Backup (Optional)
 # -----------------------------------------------------------------------------
-# encryption:
-#   # Enable end-to-end encryption features
-#   enabled: true
+encryption:
+  enabled: false                                   # Disable end-to-end encryption features
+  key_backup_enabled: false                       # Disable key backup
+  key_backup_version: 0                            # No key backup
 
 # -----------------------------------------------------------------------------
 # Event Retention and Purging (Optional)
 # -----------------------------------------------------------------------------
-# event_purger:
-#   enabled: true
-#   room_retention_days: 365                     # Retain room events for 1 year
+event_purger:
+  enabled: true                                     # Enable event purging
+  room_retention_days: 465                          # Retain room events for 1 year
+  purge_event_type:
+    - "m.room.message"                              # Event types to purge
 
 # -----------------------------------------------------------------------------
 # Rate Limiting Configuration (Advanced)
@@ -225,29 +232,153 @@ content_security_policy:
 rc_registration:
   per_second: 5                                     # Registration attempts per second
   burst_count: 10                                   # Burst attempts allowed
+
 rc_messages:
   max_messages_per_second: 100                      # Maximum messages per second per user
-
 
 # -----------------------------------------------------------------------------
 # File Permissions and Security
 # -----------------------------------------------------------------------------
 # Ensure that all secret files and directories are readable only by the Synapse user
-# Example commands:
+# Example commands to set proper permissions:
 # chmod 600 /data/matrix-srv.xaas.ir.signing.key
 # chmod 600 /data/certs/privkey.pem
 # chown -R synapse:synapse /data/
 
 # -----------------------------------------------------------------------------
+# Additional Configuration Options
+# -----------------------------------------------------------------------------
+
+# Maximum size for uploaded files
+max_upload_size: 400M                               # Maximum size of uploaded files
+
+# Maximum number of pixels for uploaded images
+max_image_pixels: 35M                                # Maximum image dimensions
+
+# Controls the rate at which remote media can be downloaded
+remote_media_download_burst_count: 200M             # Burst count for remote media downloads
+remote_media_download_per_second: 90K               # Downloads per second
+
+# Enable dynamic thumbnails generation
+dynamic_thumbnails: true                             # Allow dynamic generation of thumbnails for media
+
+# Media retention policies
+media_retention:
+  local_media_lifetime: 900d                          # Lifetime of local media files
+  remote_media_lifetime: 34d                          # Lifetime of remote media files
+
+# Enable URL previews in messages
+url_preview_enabled: true                            # Allow URL previews in chat messages
+
+# Allow guest access to the server
+allow_guest_access: false                            # Disallow guest access (set to true to allow)
+
+# Automatically create and join rooms based on auto_join_rooms
+autocreate_auto_join_rooms: true                      # Automatically join rooms defined in auto_join_rooms
+
+# Session management settings
+session_lifetime: 94h                                 # Duration before user sessions expire
+refreshable_access_token_lifetime: 20m               # Lifetime of refreshable access tokens
+refresh_token_lifetime: 24h                          # Lifetime of refresh tokens
+
+# UI Authentication settings
+ui_auth:
+  session_timeout: "15s"                              # Timeout for UI authentication sessions
+
+# Statistics reporting
+stats:
+  enabled: false                                       # Disable statistics reporting
+
+# Whether to forget rooms when a user leaves
+forget_rooms_on_leave: false                          # Do not forget rooms when a user leaves
+
+# Redis configuration for caching and state storage
+redis:
+  enabled: true                                        # Enable Redis for caching
+  host: redis                                          # Redis server host (use service name if using Docker)
+  port: 6379                                           # Redis server port
+  # Uncomment and configure the following if using TLS with Redis
+  # use_tls: true
+  # certificate_file: "/path/to/certificate.pem"       # Path to Redis TLS certificate
+  # private_key_file: "/path/to/private_key.pem"       # Path to Redis TLS private key
+  # ca_file: "/path/to/ca_certificate.pem"             # Path to CA certificate
+
+# -----------------------------------------------------------------------------
 # Final Notes
 # -----------------------------------------------------------------------------
-# - Replace placeholder values (e.g., passwords, secrets) with secure, unique values.
+# - Replace placeholder values (e.g., passwords, secrets, email settings) with secure, unique values.
 # - Obtain and place your TLS certificates in the specified paths.
 # - Regularly back up your configuration files and databases.
 # - Test the configuration in a staging environment before deploying to production.
 # - Monitor logs and metrics to ensure the server operates smoothly.
+# - Update Synapse and its dependencies regularly to benefit from the latest features and security patches.
 
+# -----------------------------------------------------------------------------
 # vim:ft=yaml
+# -----------------------------------------------------------------------------
 
-report_stats: True
-suppress_key_server_warning: True
+# Reporting and Statistics
+report_stats: true                                   # Allow Synapse to report anonymous usage statistics
+suppress_key_server_warning: true                   # Suppress warnings about key servers
+use_insecure_ssl_client_just_for_testing_do_not_use: true  # Allow insecure SSL clients for testing purposes (NOT RECOMMENDED)
+
+# Media Repository
+enable_media_repo: true                             # Enable the media repository feature
+
+# Well-Known Configuration
+serve_server_wellknown: false                       # Do not serve .well-known/matrix/client and .well-known/matrix/server
+
+# Presence Configuration
+presence:
+  enabled: true                                     # Enable presence updates
+  include_offline_users_on_sync: true               # Include offline users in presence updates during sync
+
+# Retention Policies
+retention:
+  enabled: true                                     # Enable data retention policies
+  default_policy:
+    min_lifetime: 1d                                 # Minimum lifetime for retained data
+    max_lifetime: 1y                                 # Maximum lifetime for retained data
+  allowed_lifetime_min: 1d                           # Minimum allowed lifetime for retention
+  allowed_lifetime_max: 1y                           # Maximum allowed lifetime for retention
+  purge_jobs:
+    - longest_max_lifetime: 3d                       # Purge jobs for the longest max lifetime
+      interval: 12h                                   # Interval between purge jobs
+    - shortest_max_lifetime: 3d                      # Purge jobs for the shortest max lifetime
+      interval: 1d                                    # Interval between purge jobs
+
+# Federation Lookups
+allow_device_name_lookup_over_federation: true      # Allow device name lookups over federation
+allow_profile_lookup_over_federation: false          # Disallow profile lookups over federation
+
+# -----------------------------------------------------------------------------
+# Additional Custom Modules and Extensions (Optional)
+# -----------------------------------------------------------------------------
+# modules:
+#   - name: "my_custom_module"                       # Name of the custom module
+#     config:
+#       option1: value1                               # Configuration option 1
+#       option2: value2                               # Configuration option 2
+
+# -----------------------------------------------------------------------------
+# Security Best Practices (Important)
+# -----------------------------------------------------------------------------
+# It's highly recommended to enable and properly configure TLS for all listeners.
+# Disable insecure settings before deploying to a production environment.
+# Regularly review and update your configuration to adhere to security best practices.
+
+# -----------------------------------------------------------------------------
+# URL Preview Configuration
+# -----------------------------------------------------------------------------
+url_preview_enabled: true                        # Enable URL previews in messages
+url_preview_ip_range_blacklist:                  # Blacklist IP ranges for URL previews
+  - "127.0.0.0/8"                                # Loopback addresses
+  - "10.0.0.0/8"                                 # Private network
+  - "172.16.0.0/12"                              # Private network
+  - "192.168.0.0/16"                             # Private network
+  - "169.254.0.0/16"                             # Link-local addresses
+  - "::1/128"                                    # IPv6 loopback
+  - "fc00::/7"                                    # IPv6 unique local addresses
+  - "fe80::/10"                                   # IPv6 link-local addresses
+  - "localhost"                                   # Hostname resolution for localhost
+  - "matrix-srv.xaas.ir"                          # Your own server to prevent self-fetching
