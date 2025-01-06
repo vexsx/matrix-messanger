@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   # Synapse (Matrix server)
   synapse:
@@ -14,10 +16,10 @@ services:
     ports:
       - "8008:8008"
       - "8448:8448"
-      - "9001:9000" #[prometheus]
-    #command: ["generate"]
+      - "9001:9000" # [Prometheus]
     depends_on:
       - postgres
+      - turn
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
       interval: 30s
@@ -25,23 +27,8 @@ services:
       retries: 3
     networks:
       - synapse_network
-  ## whatsapp
-  mautrix-whatsapp:
-    container_name: mautrix-whatsapp
-    image: dock.mau.dev/mautrix/whatsapp:latest
-    privileged: true # /shrug
-    #user: 991:991
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "3"
-    restart: unless-stopped
-    volumes:
-    - ./data/bridges/whatsapp:/data
-    networks:
-      - synapse_network
 
-  ## redis
+  # Redis (Cache)
   redis:
     container_name: redis
     image: redis:latest
@@ -51,11 +38,12 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD", "redis-cli","ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 3s
       timeout: 3s
     networks:
       - synapse_network
+
   # Postgres database
   postgres:
     image: docker.arvancloud.ir/postgres:14
@@ -75,6 +63,22 @@ services:
       - /etc/localtime:/etc/localtime:ro
     secrets:
       - postgres_password
+    networks:
+      - synapse_network
+
+  # TURN Server (Coturn)
+  turn:
+    image: instrumentisto/coturn
+    container_name: coturn
+    restart: unless-stopped
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+    volumes:
+      - ./data/turnserver/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    environment:
+      - REALM=matrix-srv.xaas.ir
+      - SHARED_SECRET=4e6f4e7054682b4f5475337a5a72736a
     networks:
       - synapse_network
 

@@ -30,6 +30,16 @@ server {
        add_header X-XSS-Protection "1; mode=block";
        add_header Content-Security-Policy "frame-ancestors 'none'";
     }
+    
+    location /_matrix/ {
+        proxy_pass http://synapse:8008;
+        proxy_set_header Host $host;
+    }
+
+    location /_synapse/ {
+        proxy_pass http://synapse:8448;
+        proxy_set_header Host $host;
+    }
 
     access_log /var/log/nginx/matrix.xaas.ir.access.log;
     error_log  /var/log/nginx/matrix.xaas.ir.error.log;
