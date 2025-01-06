@@ -75,12 +75,15 @@ signing_key_path: "/data/matrix-srv.xaas.ir.signing.key"                        
 # Trusted Key Servers for Federation
 # -----------------------------------------------------------------------------
 trusted_key_servers:
-  - server_name: "matrix.org"       # Trusted external server for federation
+  - server_name: "matrix.xaas.ir"       # Trusted external server for federation
+    accept_keys_insecurely: true
+
+  - server_name: "matrix-srv.xaas.ir"       # Trusted external server for federation
+    accept_keys_insecurely: true
 
 federation_domain_whitelist: []  # Allow federation with all domains
 federation_verify_certificates: false
 allow_insecure_ssl_clients: true
-
 # -----------------------------------------------------------------------------
 # Registration Settings
 # -----------------------------------------------------------------------------

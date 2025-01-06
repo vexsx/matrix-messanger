@@ -258,3 +258,13 @@ default_room_version: "1"                       # Use a non-encrypted room versi
 # 1. Adjusting these settings impacts security but simplifies user experience.
 # 2. Ensure your users are informed if encryption is disabled for privacy reasons.
 # 3. These settings will prevent encrypted messages or verification prompts but may allow plaintext messages to be intercepted if SSL/TLS is not properly configured.
+
+## voip
+voip:
+  turn_uris:
+    - "turn:turn.matrix-srv.xaas.ir:3478?transport=udp"
+    - "turn:turn.matrix-srv.xaas.ir:3478?transport=tcp"
+  turn_shared_secret: "4e6f4e7054682b4f5475337a5a72736a"
+  turn_user_lifetime: "86400s"
+  stun_uris:
+    - "stun:stun.l.google.com:19302"
